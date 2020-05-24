@@ -1,19 +1,24 @@
 import zmq
+import re
 
 
 def main():
     context = zmq.Context()
+    ip, port = "localhost", 5555
 
-    print("Connecting to server...")
+    print("Requesting Connection...")
     socket = context.socket(zmq.REQ)
-    socket.connect("tcp://localhost:5555")
+    socket.connect(f"tcp://{ip}:{port}")
+    socket.send_string("Requesting Connection")
+    port = int(re.findall("[0-9]+$", str(socket.recv_string()))[0])
+    socket.close()
+    socket = context.socket(zmq.REQ)
+    socket.connect(f"tcp://{ip}:{port}")
+    print(f"Connected to {ip} on port {port}")
 
-    for i in range(10):
-        print(f"Sending request: {i}")
-        socket.send_string(f"Hello number {i}")
+    msg = socket.recv_string()
+    print(msg)
 
-        message = socket.recv_string()
-        print(f"Reply: {message}")
 
 if __name__ == "__main__":
     main()
