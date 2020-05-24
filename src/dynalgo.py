@@ -1,5 +1,6 @@
 import zmq
 import re
+import time
 
 
 def main():
@@ -9,15 +10,22 @@ def main():
     print("Requesting Connection...")
     socket = context.socket(zmq.REQ)
     socket.connect(f"tcp://{ip}:{port}")
-    socket.send_string("Requesting Connection")
-    port = int(re.findall("[0-9]+$", str(socket.recv_string()))[0])
-    socket.close()
-    socket = context.socket(zmq.REQ)
+    socket.send_string("REQUESTING CONNECTION")
+
+    ret = socket.recv_string()
+    socket.disconnect(f"tcp://{ip}:{port}")
+    port = int(re.findall("[0-9]+$", ret)[0])
     socket.connect(f"tcp://{ip}:{port}")
     print(f"Connected to {ip} on port {port}")
 
-    msg = socket.recv_string()
-    print(msg)
+    print("Disconnecting")
+    socket.send_string("REMOVE CONNECTION")
+    ret = socket.recv_string()
+    if ret == "OK":
+        socket.disconnect(f"tcp://{ip}:{port}")
+
+    # msg = socket.recv_string()
+    # print(msg)
 
 
 if __name__ == "__main__":
