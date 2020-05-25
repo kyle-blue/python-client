@@ -1,0 +1,2 @@
+class TradeManager:
+    pass
