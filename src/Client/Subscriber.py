@@ -24,7 +24,6 @@ class Subscriber(ClientSocket, threading.Thread):
     def stop(self) -> None:
         self.disconnect()
         self._stop.set()
-        threading.Thread.start()
 
     def start(self) -> None:
         self._stop.clear()
@@ -34,7 +33,7 @@ class Subscriber(ClientSocket, threading.Thread):
         return self._stop.isSet()
 
     def run(self) -> None:
-        ticks = self.data.ticks
+        raw_ticks = self.data.raw_ticks
         while not self.stopped():
             try:
                 json_info = json.loads(self.socket.recv_string())
@@ -45,10 +44,12 @@ class Subscriber(ClientSocket, threading.Thread):
                 continue
             for info in json_info["symbols"]:
                 symbol = info["symbol"]
-                if symbol not in ticks:
-                    ticks[symbol] = {"bids": [], "asks": [], "volumes": [], "times": []}
-                ticks[symbol]["bids"].append(info["bid"])
-                ticks[symbol]["asks"].append(info["ask"])
-                ticks[symbol]["volumes"].append(info["volume"])
-                ticks[symbol]["times"].append(datetime.strptime(info["time"], "%Y.%m.%d %H:%M:%S"))
+                self.data.lock.acquire()
+                if symbol not in raw_ticks:
+                    raw_ticks[symbol] = {"bids": [], "asks": [], "volumes": [], "times": []}
+                raw_ticks[symbol]["bids"].append(info["bid"])
+                raw_ticks[symbol]["asks"].append(info["ask"])
+                raw_ticks[symbol]["volumes"].append(info["volume"])
+                raw_ticks[symbol]["times"].append(datetime.strptime(info["time"], "%Y.%m.%d %H:%M:%S"))
+                self.data.lock.release()
 
