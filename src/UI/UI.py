@@ -37,8 +37,8 @@ class UI(): # Thread is main thread.
 
             old_x_lower, old_x_upper = ax.get_xbound()
             old_y_lower, old_y_upper = ax.get_ybound()
-            should_update_x = x_max > old_x_upper
-            should_update_y = y_max > old_y_upper or y_min < old_y_lower
+            should_update_x = x_max + (x_range / 10) > old_x_upper
+            should_update_y = y_max + (y_range / 20) > old_y_upper or y_min - (y_range / 20) < old_y_lower
 
             if should_update_y or should_update_x:
                 ax.set_xbound(x_min - (x_range / 8), x_max + (x_range / 3))
