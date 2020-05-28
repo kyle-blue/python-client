@@ -2,11 +2,14 @@ import json
 from datetime import datetime
 from json.decoder import JSONDecodeError
 
+from matplotlib import dates
+
 from .Socket import Socket as ClientSocket
 from zmq import Context
 import zmq
 import threading
 from ..Data import Data
+from ..Data.SymbolTicks import SymbolTicks
 
 
 class Subscriber(ClientSocket, threading.Thread):
@@ -33,7 +36,7 @@ class Subscriber(ClientSocket, threading.Thread):
         return self._stop.isSet()
 
     def run(self) -> None:
-        raw_ticks = self.data.raw_ticks
+        ticks = self.data.ticks
         while not self.stopped():
             try:
                 json_info = json.loads(self.socket.recv_string())
@@ -45,11 +48,12 @@ class Subscriber(ClientSocket, threading.Thread):
             for info in json_info["symbols"]:
                 symbol = info["symbol"]
                 self.data.lock.acquire()
-                if symbol not in raw_ticks:
-                    raw_ticks[symbol] = {"bids": [], "asks": [], "volumes": [], "times": []}
-                raw_ticks[symbol]["bids"].append(info["bid"])
-                raw_ticks[symbol]["asks"].append(info["ask"])
-                raw_ticks[symbol]["volumes"].append(info["volume"])
-                raw_ticks[symbol]["times"].append(datetime.strptime(info["time"], "%Y.%m.%d %H:%M:%S"))
+                if symbol not in ticks:
+                    ticks[symbol] = SymbolTicks()
+                ticks[symbol].bids.append(info["bid"])
+                ticks[symbol].asks.append(info["ask"])
+                ticks[symbol].python_times.append(datetime.strptime(info["time"], "%Y.%m.%d %H:%M:%S"))
+                ticks[symbol].times.append(dates.date2num(ticks[symbol].python_times[len(ticks[symbol].python_times) - 1]))
+                ticks[symbol].has_been_processed = False
                 self.data.lock.release()
 

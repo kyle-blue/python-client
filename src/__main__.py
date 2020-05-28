@@ -1,4 +1,4 @@
-from src.UI import UI
+from src.UI.OLD_UI import UI
 from src.Client import Client
 from src.Data.Wrangler import Wrangler
 
